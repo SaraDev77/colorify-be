@@ -3,20 +3,25 @@ import { Color } from "../../models/color.model";
 
 export const getAllColors = async (req: Request, res: Response) => {
   try {
-    // Extract query parameters with defaults and validation
-    const page = parseInt(req.query.page as string, 10) || 1; // Defaults to 1 if not a number
+    const page = parseInt(req.query.page as string, 10) || 1;
     const perPage = parseInt(req.query.perPage as string, 10) || 10;
+    const search = (req.query.search as string)?.toLowerCase() || "";
     const skip = (page - 1) * perPage;
 
-    // Fetch total count of documents
-    const total = await Color.countDocuments();
+   
+    const filter = search
+      ? { quote: { $regex: search, $options: "i" } } 
+      : {};
 
-    // Fetch paginated results
-    const colors = await Color.find()
+    // Fetch total count of matching documents
+    const total = await Color.countDocuments(filter);
+
+    // Fetch paginated and filtered results
+    const colors = await Color.find(filter)
       .skip(skip)
       .limit(perPage);
 
-    // Return paginated data and metadata
+
     res.status(200).json({
       colors,
       pagination: {
